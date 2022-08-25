@@ -40,8 +40,14 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
 
     Message sentMessage = await botClient.SendTextMessageAsync(
         chatId: chatId,
-        text: BackResponse(messageText, userInfo), //$"You said:\n '{messageText}'",
+        text: BackResponse(messageText, userInfo), 
         cancellationToken: cancellationToken);
+
+    //Log msg to @davayponovoy
+    /*Message logAction = await botClient.SendTextMessageAsync(
+        chatId: 470906072,
+        text: "msg from: @"+userInfo.Username+" - "+ messageText,
+        cancellationToken: cancellationToken);*/
 
 }
  Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
@@ -59,13 +65,14 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
 
 string BackResponse(string message, User from)
 {
+    // /start, /help, /setCurrentCurrency, /checkUsdRate, checkEurRate, CheckGbpRate
     switch (message.ToLower())
     {
-        case "hello":
-            return "Hi," + from.FirstName;
+        case "/start":
+            return "Hi, " + from.FirstName+"! Here you can check exchange rates in few seconds";
             break;
-        case "help":
-            return "you shout messsage @"+from.Username;
+        case "/help":
+            return "You should messsage @davayponovoy";
             break;
         default:
             return "msg from default";
