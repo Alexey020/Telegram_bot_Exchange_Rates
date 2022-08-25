@@ -34,12 +34,13 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
         return;
 
     var chatId = message.Chat.Id;
+    var userInfo = message.From; 
 
    Console.WriteLine($"Resived '{messageText}' mesasage in chat {chatId}");
 
     Message sentMessage = await botClient.SendTextMessageAsync(
         chatId: chatId,
-        text:$"You said:\n '{messageText}'",
+        text: BackResponse(messageText, userInfo), //$"You said:\n '{messageText}'",
         cancellationToken: cancellationToken);
 
 }
@@ -54,4 +55,22 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
 
     Console.WriteLine(ErrorMessage);
     return Task.CompletedTask;
+}
+
+string BackResponse(string message, User from)
+{
+    switch (message.ToLower())
+    {
+        case "hello":
+            return "Hi," + from.FirstName;
+            break;
+        case "help":
+            return "you shout messsage @"+from.Username;
+            break;
+        default:
+            return "msg from default";
+            break;
+    }
+       
+   // return "";
 }
