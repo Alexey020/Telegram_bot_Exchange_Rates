@@ -5,8 +5,11 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 var botClient = new TelegramBotClient("5355422609:AAGVFUA8bIup8ihBssW7y2weZst_jtm-Phs");
-
 using var cts = new CancellationTokenSource();
+
+ MenuPoint menuPoint = MenuPoint.main;
+string userCurrency = default;
+
 var receiverOptions = new ReceiverOptions()
 {
     AllowedUpdates = Array.Empty<UpdateType>()
@@ -63,21 +66,76 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
     return Task.CompletedTask;
 }
 
+
 string BackResponse(string message, User from)
 {
     // /start, /help, /setCurrentCurrency, /checkUsdRate, checkEurRate, CheckGbpRate
-    switch (message.ToLower())
+    string commandList = "Command list:\n /help\n /setCurrency\n /checkRate";
+    
+
+    if (menuPoint == MenuPoint.main)
     {
-        case "/start":
-            return "Hi, " + from.FirstName+"! Here you can check exchange rates in few seconds";
-            break;
-        case "/help":
-            return "You should messsage @davayponovoy";
-            break;
-        default:
-            return "msg from default";
-            break;
+        switch (message.ToLower())
+        {
+            case "/start":
+                return "Hi, " + from.FirstName + "! Here you can check exchange rates in few seconds\n" + commandList;
+                break;
+            case "/help":
+            case "help":
+                return "You should messsage @davayponovoy\n" + commandList;
+                break;
+            case "/checkrate":
+                return GetRates(userCurrency);
+                break;
+            case "/setcurrency":
+                menuPoint = MenuPoint.setCurrensy;
+                return "Put 'USD', 'GBR', 'EUR' or code of other currency";
+                break;
+            default:
+                return "unknown command";
+                break;
+        }
     }
-       
-   // return "";
+    
+    if (menuPoint == MenuPoint.setCurrensy)
+    {
+        if (message.Length == 3)
+        {
+            userCurrency = message.ToUpper();
+            menuPoint = MenuPoint.main;
+            return "Your currency: " + userCurrency;
+        }
+        else
+        {
+            return "Uncorrect format. Try again";
+        }
+    }
+
+   /* if (menuPoint == MenuPoint.showRate)
+    {
+        menuPoint = MenuPoint.main;
+        return userCurrency + " to USD = 9999" +
+               userCurrency + " to GBR = 9999" +
+               userCurrency + " to EUR = 9999";
+
+    }*/
+
+    return "";
+}
+
+string GetRates(string userCurrency)
+{
+    return userCurrency + " to USD = 9999\n" +
+              userCurrency + " to GBR = 9999\n" +
+              userCurrency + " to EUR = 9999\n";
+}
+
+
+
+// api kay ------           AiaHLF3rI5kPtkNDCDuOZT5TjYrkkJAF
+enum MenuPoint
+{
+    main = 1,
+    setCurrensy,
+    showRate
 }
