@@ -69,7 +69,7 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
 
 string BackResponse(string message, User from)
 {
-    // /start, /help, /setCurrentCurrency, /checkUsdRate, checkEurRate, CheckGbpRate
+    // /start, /help, /setCurrentCurrency, /checkRate
     string commandList = "Command list:\n /help\n /setCurrency\n /checkRate";
     
 
@@ -111,15 +111,7 @@ string BackResponse(string message, User from)
         }
     }
 
-   /* if (menuPoint == MenuPoint.showRate)
-    {
-        menuPoint = MenuPoint.main;
-        return userCurrency + " to USD = 9999" +
-               userCurrency + " to GBR = 9999" +
-               userCurrency + " to EUR = 9999";
-
-    }*/
-
+  
     return "";
 }
 
@@ -129,8 +121,6 @@ string GetRates(string userCurrency)
               userCurrency + " to GBR = 9999\n" +
               userCurrency + " to EUR = 9999\n";
 }
-
-
 
 // api kay ------           AiaHLF3rI5kPtkNDCDuOZT5TjYrkkJAF
 enum MenuPoint
