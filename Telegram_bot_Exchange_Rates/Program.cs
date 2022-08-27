@@ -3,12 +3,11 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 var botClient = new TelegramBotClient("5355422609:AAGVFUA8bIup8ihBssW7y2weZst_jtm-Phs");
 using var cts = new CancellationTokenSource();
 
- MenuPoint menuPoint = MenuPoint.main;
-string userCurrency = default;
 
 var receiverOptions = new ReceiverOptions()
 {
@@ -37,14 +36,62 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
         return;
 
     var chatId = message.Chat.Id;
-    var userInfo = message.From; 
+    var userInfo = message.From;
 
-   Console.WriteLine($"Resived '{messageText}' mesasage in chat {chatId}");
+    Console.WriteLine($"Resived '{messageText}' mesasage in chat {chatId}");
 
-    Message sentMessage = await botClient.SendTextMessageAsync(
+    ReplyKeyboardMarkup replyKeyboardMarkup = new(new[]
+    {
+        new KeyboardButton[] { "Set currency", "Show rates","svodka" },
+    })
+    {
+        ResizeKeyboard = true
+    };
+
+    Message sentMessage;
+
+    switch (messageText.ToLower())
+    {
+        case "/start":
+            sentMessage = await botClient.SendTextMessageAsync(
         chatId: chatId,
-        text: BackResponse(messageText, userInfo), 
-        cancellationToken: cancellationToken);
+        text: "Hi, " + userInfo.FirstName + "! Here you can check exchange rates in few seconds\n",
+        cancellationToken: cancellationToken,
+        replyMarkup: replyKeyboardMarkup
+        );
+            break;
+        case "/help":
+        case "help":
+          //  return "You should messsage @davayponovoy\n";
+            break;
+        case "show rates":
+            sentMessage = await botClient.SendTextMessageAsync(
+        chatId: chatId,
+        text: "Your carruncy - XXX" + "\nUSD/XXX - 99.99" + "\nEUR/XXX - 99.99" + "\nGBP/XXX - 99.99",
+        cancellationToken: cancellationToken,
+        replyMarkup: replyKeyboardMarkup
+        );
+            break;
+        case "set currency":
+            sentMessage = await botClient.SendTextMessageAsync(
+        chatId: chatId,
+        text: "Put 'USD', 'GBR', 'EUR' or code of other currency",
+        cancellationToken: cancellationToken,
+        replyMarkup: replyKeyboardMarkup
+        );
+            break;
+        case "svodka":
+            sentMessage = await botClient.SendTextMessageAsync(
+        chatId: chatId,
+        text: "svodka,",
+        cancellationToken: cancellationToken,
+        replyMarkup: replyKeyboardMarkup
+        );
+            break;
+        default:
+            
+            break;
+    }
 
     //Log msg to @davayponovoy
     /*Message logAction = await botClient.SendTextMessageAsync(
@@ -53,7 +100,10 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
         cancellationToken: cancellationToken);*/
 
 }
- Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+
+
+
+Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 {
     var ErrorMessage = exception switch
     {
@@ -70,62 +120,9 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
 string BackResponse(string message, User from)
 {
     // /start, /help, /setCurrentCurrency, /checkRate
-    string commandList = "Command list:\n /help\n /setCurrency\n /checkRate";
-    
-
-    if (menuPoint == MenuPoint.main)
-    {
-        switch (message.ToLower())
-        {
-            case "/start":
-                return "Hi, " + from.FirstName + "! Here you can check exchange rates in few seconds\n" + commandList;
-                break;
-            case "/help":
-            case "help":
-                return "You should messsage @davayponovoy\n" + commandList;
-                break;
-            case "/checkrate":
-                return GetRates(userCurrency);
-                break;
-            case "/setcurrency":
-                menuPoint = MenuPoint.setCurrensy;
-                return "Put 'USD', 'GBR', 'EUR' or code of other currency";
-                break;
-            default:
-                return "unknown command";
-                break;
-        }
-    }
-    
-    if (menuPoint == MenuPoint.setCurrensy)
-    {
-        if (message.Length == 3)
-        {
-            userCurrency = message.ToUpper();
-            menuPoint = MenuPoint.main;
-            return "Your currency: " + userCurrency;
-        }
-        else
-        {
-            return "Uncorrect format. Try again";
-        }
-    }
-
-  
-    return "";
-}
-
-string GetRates(string userCurrency)
-{
-    return userCurrency + " to USD = 9999\n" +
-              userCurrency + " to GBR = 9999\n" +
-              userCurrency + " to EUR = 9999\n";
+    return "fd";
+     
+           
 }
 
 // api kay ------           AiaHLF3rI5kPtkNDCDuOZT5TjYrkkJAF
-enum MenuPoint
-{
-    main = 1,
-    setCurrensy,
-    showRate
-}
