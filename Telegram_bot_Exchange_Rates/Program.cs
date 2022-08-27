@@ -5,10 +5,9 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-var botClient = new TelegramBotClient("5355422609:AAGVFUA8bIup8ihBssW7y2weZst_jtm-Phs");
+var botClient = new TelegramBotClient("your token");
 using var cts = new CancellationTokenSource();
-//Dictionary<long, MenuPoint> userPoints = new Dictionary<long, MenuPoint>();
-MenuPoint menuPoint = MenuPoint.start;
+List<UserInfo> userInfos = new List<UserInfo>();
 
 
 var receiverOptions = new ReceiverOptions()
@@ -38,24 +37,25 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
         return;
 
     var chatId = message.Chat.Id;
-    var userInfo = message.From;
-  /*  if (!userPoints.ContainsKey(chatId))
+
+    if (!userInfos.Contains(new UserInfo(chatId)))
     {
-        userPoints.Add(chatId, MenuPoint.start);
-    }*/
-    string userCurrency = default;
+        userInfos.Add(new UserInfo(chatId) { menuPoint = MenuPoint.start });
+    }
 
     Console.WriteLine($"Resived '{messageText}' mesasage in chat {chatId}");
 
     Message sentMessage;
+    
     Repeat:
-    switch (menuPoint)//(userPoints.GetValueOrDefault(chatId))
+    switch (userInfos.GetById(chatId).menuPoint)
     {
         case MenuPoint.start:
-            menuPoint = MenuPoint.setCurrensy;
+
+            userInfos.GetById(chatId).menuPoint =  MenuPoint.setCurrensy;
             sentMessage = await botClient.SendTextMessageAsync(
                 chatId: chatId,
-                text: "Hi, " + userInfo.FirstName + "! Here you can check exchange rates in few seconds\n",
+                text: "Hi, " + message.From.FirstName + "! Here you can check exchange rates in few seconds\n",
                 cancellationToken: cancellationToken,
                 replyMarkup: (ReplyKeyboardMarkup)new(new[] {new KeyboardButton[] { "SET CURRENCY"} }) { ResizeKeyboard = true}
                 );
@@ -63,15 +63,15 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
             break;
         case MenuPoint.main:
             if (messageText == "CHANGE CURRENCY")
-                menuPoint = MenuPoint.setCurrensy;
+                userInfos.GetById(chatId).menuPoint =  MenuPoint.setCurrensy;
             if (messageText == "CHACK RATE")
-                menuPoint = MenuPoint.showRate;
+                userInfos.GetById(chatId).menuPoint = MenuPoint.showRate;
 
-            if (menuPoint != MenuPoint.main)
+            if (userInfos.GetById(chatId).menuPoint != MenuPoint.main)
                 goto Repeat;
             break;
         case MenuPoint.setCurrensy:
-            menuPoint = MenuPoint.choseCurrency;
+            userInfos.GetById(chatId).menuPoint = MenuPoint.choseCurrency;
             sentMessage = await botClient.SendTextMessageAsync(
                 chatId: chatId,
                 text: "Chose youe carrency\n",
@@ -82,11 +82,11 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
             break;
         case MenuPoint.choseCurrency:
             if (messageText == "USD" || messageText == "EUR" || messageText == "GBR")
-                userCurrency = messageText;
+                userInfos.GetById(chatId).Currency = messageText;
 
-            if (userCurrency == messageText)
+            if (userInfos.GetById(chatId).Currency == messageText)
             {
-                menuPoint = MenuPoint.main;
+                userInfos.GetById(chatId).menuPoint =  MenuPoint.main;
                 sentMessage = await botClient.SendTextMessageAsync(
                 chatId: chatId,
                 text: "CHOSE NEXT ACTION\n",
@@ -97,57 +97,23 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
             }
             break;
         case MenuPoint.showRate:
-           
-                menuPoint = MenuPoint.main;
+
+            userInfos.GetById(chatId).menuPoint =  MenuPoint.main;
                 sentMessage = await botClient.SendTextMessageAsync(
                 chatId: chatId,
-                text: GetRates(userCurrency),
+                text: GetRates(userInfos.GetById(chatId).Currency),
                 cancellationToken: cancellationToken,
                 replyMarkup: (ReplyKeyboardMarkup)new(new[] { new KeyboardButton[] { "CHACK RATE", "CHANGE CURRENCY" } }) { ResizeKeyboard = true }
                 ) ;
-            menuPoint = MenuPoint.main;
             break; 
         default:
+            if (messageText == "/start")
+            {
+                userInfos.GetById(chatId).menuPoint = MenuPoint.start;
+            }
             break;
     }
-   /* switch (messageText.ToLower())
-    {
-        case "/start":
-           
-            break;
-        case "/help":
-        case "help":
-          //  return "You should messsage @davayponovoy\n";
-            break;
-        case "show rates":
-            sentMessage = await botClient.SendTextMessageAsync(
-        chatId: chatId,
-        text: "Your carruncy - XXX" + "\nUSD/XXX - 99.99" + "\nEUR/XXX - 99.99" + "\nGBP/XXX - 99.99",
-        cancellationToken: cancellationToken,
-        replyMarkup: replyKeyboardMarkup
-        );
-            break;
-        case "set currency":
-            sentMessage = await botClient.SendTextMessageAsync(
-        chatId: chatId,
-        text: "Put 'USD', 'GBR', 'EUR' or code of other currency",
-        cancellationToken: cancellationToken,
-        replyMarkup: replyKeyboardMarkup
-        );
-            break;
-        case "svodka":
-            sentMessage = await botClient.SendTextMessageAsync(
-        chatId: chatId,
-        text: "svodka,",
-        cancellationToken: cancellationToken,
-        replyMarkup: replyKeyboardMarkup
-        );
-            break;
-        default:
-            
-            break;
-    }*/
-
+   
     //Log msg to @davayponovoy
     /*Message logAction = await botClient.SendTextMessageAsync(
         chatId: 470906072,
@@ -181,6 +147,31 @@ enum MenuPoint
     main,
     setCurrensy,
     choseCurrency,
-
     showRate
+}
+class UserInfo
+{
+    public long Id { get; set; }
+    public MenuPoint menuPoint { get; set; }
+    public string Currency { get; set; }
+
+    public UserInfo(long id)
+    {
+        Id = id;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is UserInfo info &&
+               Id == info.Id;
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Id);
+    }
+}
+static class ExprndingFuncs
+{
+public static UserInfo GetById(this List<UserInfo> usersI, long id) => usersI.Find(x => x.Id == id);
 }
