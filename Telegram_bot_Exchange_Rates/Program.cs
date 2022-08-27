@@ -7,6 +7,8 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 var botClient = new TelegramBotClient("5355422609:AAGVFUA8bIup8ihBssW7y2weZst_jtm-Phs");
 using var cts = new CancellationTokenSource();
+//Dictionary<long, MenuPoint> userPoints = new Dictionary<long, MenuPoint>();
+MenuPoint menuPoint = MenuPoint.start;
 
 
 var receiverOptions = new ReceiverOptions()
@@ -37,28 +39,81 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
 
     var chatId = message.Chat.Id;
     var userInfo = message.From;
+  /*  if (!userPoints.ContainsKey(chatId))
+    {
+        userPoints.Add(chatId, MenuPoint.start);
+    }*/
+    string userCurrency = default;
 
     Console.WriteLine($"Resived '{messageText}' mesasage in chat {chatId}");
 
-    ReplyKeyboardMarkup replyKeyboardMarkup = new(new[]
-    {
-        new KeyboardButton[] { "Set currency", "Show rates","svodka" },
-    })
-    {
-        ResizeKeyboard = true
-    };
-
     Message sentMessage;
+    Repeat:
+    switch (menuPoint)//(userPoints.GetValueOrDefault(chatId))
+    {
+        case MenuPoint.start:
+            menuPoint = MenuPoint.setCurrensy;
+            sentMessage = await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: "Hi, " + userInfo.FirstName + "! Here you can check exchange rates in few seconds\n",
+                cancellationToken: cancellationToken,
+                replyMarkup: (ReplyKeyboardMarkup)new(new[] {new KeyboardButton[] { "SET CURRENCY"} }) { ResizeKeyboard = true}
+                );
+            
+            break;
+        case MenuPoint.main:
+            if (messageText == "CHANGE CURRENCY")
+                menuPoint = MenuPoint.setCurrensy;
+            if (messageText == "CHACK RATE")
+                menuPoint = MenuPoint.showRate;
 
-    switch (messageText.ToLower())
+            if (menuPoint != MenuPoint.main)
+                goto Repeat;
+            break;
+        case MenuPoint.setCurrensy:
+            menuPoint = MenuPoint.choseCurrency;
+            sentMessage = await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: "Chose youe carrency\n",
+                cancellationToken: cancellationToken,
+                replyMarkup: (ReplyKeyboardMarkup)new(new[] { new KeyboardButton[] {  "USD", "EUR", "GBR" } }) { ResizeKeyboard = true }
+                );
+            
+            break;
+        case MenuPoint.choseCurrency:
+            if (messageText == "USD" || messageText == "EUR" || messageText == "GBR")
+                userCurrency = messageText;
+
+            if (userCurrency == messageText)
+            {
+                menuPoint = MenuPoint.main;
+                sentMessage = await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: "CHOSE NEXT ACTION\n",
+                cancellationToken: cancellationToken,
+                replyMarkup: (ReplyKeyboardMarkup)new(new[] { new KeyboardButton[] { "CHACK RATE", "CHANGE CURRENCY" } }) { ResizeKeyboard = true }
+                );
+                
+            }
+            break;
+        case MenuPoint.showRate:
+           
+                menuPoint = MenuPoint.main;
+                sentMessage = await botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: GetRates(userCurrency),
+                cancellationToken: cancellationToken,
+                replyMarkup: (ReplyKeyboardMarkup)new(new[] { new KeyboardButton[] { "CHACK RATE", "CHANGE CURRENCY" } }) { ResizeKeyboard = true }
+                ) ;
+            menuPoint = MenuPoint.main;
+            break; 
+        default:
+            break;
+    }
+   /* switch (messageText.ToLower())
     {
         case "/start":
-            sentMessage = await botClient.SendTextMessageAsync(
-        chatId: chatId,
-        text: "Hi, " + userInfo.FirstName + "! Here you can check exchange rates in few seconds\n",
-        cancellationToken: cancellationToken,
-        replyMarkup: replyKeyboardMarkup
-        );
+           
             break;
         case "/help":
         case "help":
@@ -91,7 +146,7 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
         default:
             
             break;
-    }
+    }*/
 
     //Log msg to @davayponovoy
     /*Message logAction = await botClient.SendTextMessageAsync(
@@ -101,7 +156,10 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
 
 }
 
-
+string GetRates(string userCurrency)
+{
+    return "Your currency - " + userCurrency + "\n USD - 22,22\n GBR - 44,44\n EUR - 99,88";
+}
 
 Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 {
@@ -116,13 +174,13 @@ Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, 
     return Task.CompletedTask;
 }
 
-
-string BackResponse(string message, User from)
-{
-    // /start, /help, /setCurrentCurrency, /checkRate
-    return "fd";
-     
-           
-}
-
 // api kay ------           AiaHLF3rI5kPtkNDCDuOZT5TjYrkkJAF
+enum MenuPoint
+{
+    start = 1,
+    main,
+    setCurrensy,
+    choseCurrency,
+
+    showRate
+}
