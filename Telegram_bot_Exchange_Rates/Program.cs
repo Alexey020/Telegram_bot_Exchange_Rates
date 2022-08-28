@@ -4,8 +4,13 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+//using Telegram_bot_Exchange_Rates;
+using ServiceStack;
+using Fizzler.Systems.HtmlAgilityPack;
+using HtmlAgilityPack;
+using System.Text;
 
-var botClient = new TelegramBotClient("your token");
+var botClient = new TelegramBotClient("token");
 using var cts = new CancellationTokenSource();
 List<UserInfo> userInfos = new List<UserInfo>();
 
@@ -76,12 +81,12 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
                 chatId: chatId,
                 text: "Chose youe carrency\n",
                 cancellationToken: cancellationToken,
-                replyMarkup: (ReplyKeyboardMarkup)new(new[] { new KeyboardButton[] {  "USD", "EUR", "GBR" } }) { ResizeKeyboard = true }
+                replyMarkup: (ReplyKeyboardMarkup)new(new[] { new KeyboardButton[] {  "USD", "EUR", "GBP","UAH" } }) { ResizeKeyboard = true }
                 );
             
             break;
         case MenuPoint.choseCurrency:
-            if (messageText == "USD" || messageText == "EUR" || messageText == "GBR")
+            if (messageText == "USD" || messageText == "EUR" || messageText == "GBP"|| messageText =="UAH")
                 userInfos.GetById(chatId).Currency = messageText;
 
             if (userInfos.GetById(chatId).Currency == messageText)
@@ -114,18 +119,8 @@ async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, Cancel
             break;
     }
    
-    //Log msg to @davayponovoy
-    /*Message logAction = await botClient.SendTextMessageAsync(
-        chatId: 470906072,
-        text: "msg from: @"+userInfo.Username+" - "+ messageText,
-        cancellationToken: cancellationToken);*/
-
 }
 
-string GetRates(string userCurrency)
-{
-    return "Your currency - " + userCurrency + "\n USD - 22,22\n GBR - 44,44\n EUR - 99,88";
-}
 
 Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
 {
@@ -140,7 +135,68 @@ Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, 
     return Task.CompletedTask;
 }
 
-// api kay ------           AiaHLF3rI5kPtkNDCDuOZT5TjYrkkJAF
+
+ string GetRates(string UserCur)
+{
+    string shootStr =
+    "https://docs.google.com/spreadsheets/d/e/2PACX-1vRoFIaxhE_wRPEHGcpN5HNB1hdw5EVAFOOpERucK6oNi0tWliFwPVNA9iGSLNbVygNWaUJY4lnGqWDV/pubhtml".GetStringFromUrl();
+
+    var html = new HtmlDocument();
+    html.LoadHtml(shootStr);
+
+    var document = html.DocumentNode;
+
+
+    var pars = document.QuerySelectorAll(".s0");
+    var values = document.QuerySelectorAll(".s1");
+    int i = 1;
+
+    StringBuilder para = new StringBuilder();
+    StringBuilder vals = new StringBuilder();
+
+    foreach (var cur in pars)
+    {
+        para.Append(cur.InnerText);
+        if (i % 2 == 0)
+            para.Append('|');
+        else
+            para.Append('/');
+        i++;
+    }
+    foreach (var val in values)
+    {
+        vals.Append(val.InnerText);
+        vals.Append('|');
+    }
+
+
+    Dictionary<string, string> rates = new Dictionary<string, string>();
+    var exchCur = para.ToString().Split('|');
+    var curRates = vals.ToString().Split('|');
+
+    i = 0;
+    while (i < exchCur.Length-1)
+    {
+        rates.Add(exchCur[i], curRates[i]);
+        i++;
+    }
+    para.Clear();
+    string responce = "";
+    string str;//useless thing.
+    foreach (var item in rates)
+    {
+        str = item.Key;
+        if (str.Split('/')[1] == UserCur)
+        {
+            responce += item.Key + " - " + ((item.Value.Length >7)?item.Value.Remove(7): item.Value) + "\n";
+        }
+    }
+
+
+    return responce;
+}
+
+
 enum MenuPoint
 {
     start = 1,
@@ -175,3 +231,4 @@ static class ExprndingFuncs
 {
 public static UserInfo GetById(this List<UserInfo> usersI, long id) => usersI.Find(x => x.Id == id);
 }
+
