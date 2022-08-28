@@ -4,7 +4,6 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-//using Telegram_bot_Exchange_Rates;
 using ServiceStack;
 using Fizzler.Systems.HtmlAgilityPack;
 using HtmlAgilityPack;
@@ -13,7 +12,6 @@ using System.Text;
 var botClient = new TelegramBotClient("token");
 using var cts = new CancellationTokenSource();
 List<UserInfo> userInfos = new List<UserInfo>();
-
 
 var receiverOptions = new ReceiverOptions()
 {
